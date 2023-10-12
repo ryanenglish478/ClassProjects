@@ -13,18 +13,48 @@ s.bind(('', port))
 #put socket into listening mode
 s.listen(5)
 print("socket is listening")
+
 #establish connection with client
 conn, addr = s.accept()
 print('Got connection from', addr)
+print("To send a file, type 'file' and then enter path to the file")
 
 while True:
-  data = conn.recv(1024).decode()
+  #Receive the data as bytes
+  data = conn.recv(1024)
   if not data:
     break
-  print('Received from client: ' + data)
-
+  
+  #Check header to see if file
+  if(data.decode().startswith('FILE ')):
+    with open('receivedClientFile.txt', 'wb') as recvFile:
+      #While file does not get to END, write file contents
+      while not data.decode().endswith(' END'):
+        fileContent = data.decode()[5:]
+        recvFile.write(fileContent.encode())
+        data = conn.recv(1024)
+      
+      #Writes the data without the FILE and END headers
+      endData = data.decode()[5:-4]
+      recvFile.write(endData.encode())
+      recvFile.close()
+      print("File Received! File contents written into receivedClientFile.txt")
+  else:
+    print('Received from client: ' + data.decode())
+  
   message = input(" -> ")
-  conn.send(message.encode())
+  if(message.lower().strip() == 'file'):
+    filepath = input("Enter file path: ")
+    with open(filepath, 'rb') as sendFile:
+       while True:
+        chunk = sendFile.read(1024)
+        if not chunk:
+          conn.send(b' END')
+          break
+        conn.send(b'FILE ' + chunk)
+    sendFile.close()
+  else:
+    conn.send(message.encode())
 
 
 
