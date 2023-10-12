@@ -1,4 +1,5 @@
 import socket
+import sys
 
 s = socket.socket()
 print("Socket successfully created")
@@ -12,11 +13,21 @@ s.bind(('', port))
 #put socket into listening mode
 s.listen(5)
 print("socket is listening")
+#establish connection with client
+conn, addr = s.accept()
+print('Got connection from', addr)
 
 while True:
-    #establish connection with client
-    c, addr = s.accept()
-    print('Got connection from', addr)
-    c.send('Thank you for connectiong'.encode())
-    c.close()
+  data = conn.recv(1024).decode()
+  if not data:
     break
+  print('Received from client: ' + data)
+
+  message = input(" -> ")
+  conn.send(message.encode())
+
+
+
+
+conn.close()
+
